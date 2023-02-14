@@ -1,0 +1,13 @@
+# Target labels
+ bootloader
+# Source files and their labels
+/home/angela/esp/projects/led/build/CMakeFiles/bootloader
+/home/angela/esp/projects/led/build/CMakeFiles/bootloader.rule
+/home/angela/esp/projects/led/build/CMakeFiles/bootloader-complete.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-build.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-configure.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-download.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-install.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-mkdir.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-patch.rule
+/home/angela/esp/projects/led/build/bootloader-prefix/src/bootloader-stamp/bootloader-update.rule

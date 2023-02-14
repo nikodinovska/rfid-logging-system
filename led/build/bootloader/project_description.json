@@ -1,0 +1,22 @@
+{
+    "project_name":       "bootloader",
+    "project_path":       "/home/angela/esp/esp-idf/components/bootloader/subproject",
+    "build_dir":          "/home/angela/esp/projects/led/build/bootloader",
+    "config_file":        "/home/angela/esp/projects/led/sdkconfig",
+    "config_defaults":    "",
+    "app_elf":            "bootloader.elf",
+    "app_bin":            "bootloader.bin",
+    "git_revision":       "v5.0-dirty",
+    "target":             "esp32",
+    "rev":                "0",
+    "phy_data_partition": "",
+    "monitor_baud" :      "115200",
+    "monitor_toolprefix": "xtensa-esp32-elf-",
+    "config_environment" : {
+        "COMPONENT_KCONFIGS" : "/home/angela/esp/esp-idf/components/efuse/Kconfig;/home/angela/esp/esp-idf/components/esp_common/Kconfig;/home/angela/esp/esp-idf/components/esp_hw_support/Kconfig;/home/angela/esp/esp-idf/components/esp_system/Kconfig;/home/angela/esp/esp-idf/components/freertos/Kconfig;/home/angela/esp/esp-idf/components/hal/Kconfig;/home/angela/esp/esp-idf/components/log/Kconfig;/home/angela/esp/esp-idf/components/newlib/Kconfig;/home/angela/esp/esp-idf/components/spi_flash/Kconfig",
+        "COMPONENT_KCONFIGS_PROJBUILD" : "/home/angela/esp/esp-idf/components/bootloader/Kconfig.projbuild;/home/angela/esp/esp-idf/components/esp_app_format/Kconfig.projbuild;/home/angela/esp/esp-idf/components/esp_rom/Kconfig.projbuild;/home/angela/esp/esp-idf/components/esptool_py/Kconfig.projbuild;/home/angela/esp/esp-idf/components/partition_table/Kconfig.projbuild"
+    },
+    "build_components" : [ "bootloader", "bootloader_support", "efuse", "esp_app_format", "esp_common", "esp_hw_support", "esp_rom", "esp_system", "esptool_py", "freertos", "hal", "log", "main", "micro-ecc", "newlib", "partition_table", "soc", "spi_flash", "xtensa", "" ],
+    "build_component_paths" : [ "/home/angela/esp/esp-idf/components/bootloader", "/home/angela/esp/esp-idf/components/bootloader_support", "/home/angela/esp/esp-idf/components/efuse", "/home/angela/esp/esp-idf/components/esp_app_format", "/home/angela/esp/esp-idf/components/esp_common", "/home/angela/esp/esp-idf/components/esp_hw_support", "/home/angela/esp/esp-idf/components/esp_rom", "/home/angela/esp/esp-idf/components/esp_system", "/home/angela/esp/esp-idf/components/esptool_py", "/home/angela/esp/esp-idf/components/freertos", "/home/angela/esp/esp-idf/components/hal", "/home/angela/esp/esp-idf/components/log", "/home/angela/esp/esp-idf/components/bootloader/subproject/main", "/home/angela/esp/esp-idf/components/bootloader/subproject/components/micro-ecc", "/home/angela/esp/esp-idf/components/newlib", "/home/angela/esp/esp-idf/components/partition_table", "/home/angela/esp/esp-idf/components/soc", "/home/angela/esp/esp-idf/components/spi_flash", "/home/angela/esp/esp-idf/components/xtensa", "" ],
+    "debug_prefix_map_gdbinit": ""
+}

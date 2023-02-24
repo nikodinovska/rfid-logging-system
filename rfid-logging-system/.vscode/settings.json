@@ -9,6 +9,9 @@
   ],
   "idf.pythonBinPath": "/home/angela/.espressif/python_env/idf5.0_py3.10_env/bin/python",
   "idf.toolsPath": "/home/angela/.espressif",
+  "files.associations": {
+    "numbers": "c"
+  },
   "idf.flashType": "UART",
   "idf.port": "/dev/ttyUSB0"
 }

@@ -10,9 +10,12 @@
 #include "lcd.h"
 #include "rfid.h"
 #include "utils.h"
+#include "json.h"
 
 #define MQTT_WAIT_MS 5
 #define MQTT_WAIT_TICKS pdMS_TO_TICKS(MQTT_WAIT_MS)
+
+#define JSON_BUF_SIZE 1024
 
 static const char* LOG_TAG = "APP";
 
@@ -71,29 +74,31 @@ void app_start()
 
 static void app_main_loop()
 {
-	char buf[100]; //temp
 	while(1)
 	{
 		// wait for RFID tag
 		rc522_tag_t tag = rfid_get_tag();
 
 		// send tag info via MQTT
-		
+		/*
 		sprintf(buf, "%" PRIu64, tag.serial_number);
 		mqtt_publish_msg(buf, MQTT_PUBLISH_TOPIC);
-
-		// send JSON info via MQTT
-		/*
-		cJSON root;
-		mqtt_publish_json_msg(&root, get_timestamp_ms(), tag.serial_number, MQTT_PUBLISH_TOPIC);
 		*/
+		// send JSON info via MQTT
+		
+		cJSON* root = create_json(get_timestamp_ms(), tag.serial_number);;
+		static char json_buf[JSON_BUF_SIZE];
+		cJSON_PrintPreallocated(root, json_buf, JSON_BUF_SIZE, true);
+		ESP_LOGI(LOG_TAG, "Formatted json: %s", json_buf);
+		mqtt_publish_msg(json_buf, MQTT_PUBLISH_TOPIC);
+		
 		// wait for publish to end
 		while(mqtt_get_connection_status() != Connected)
 		{
 			ESP_LOGI(LOG_TAG, "Waiting for MQTT publishing...");
 			vTaskDelay(MQTT_WAIT_TICKS);
 		}
-
+		cJSON_Delete(root);
 		mqtt_data_t response_mqtt;
 		// wait for MQTT response
 		int response_received = mqtt_get_data_status(&response_mqtt, -5);

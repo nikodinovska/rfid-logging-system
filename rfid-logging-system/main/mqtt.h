@@ -27,7 +27,6 @@ void mqtt_start(void);
 mqtt_status_t mqtt_get_connection_status(void);
 
 void mqtt_publish_msg(const char* msg, const char* topic);
-void mqtt_publish_json_msg(cJSON *root, uint64_t timestamp, uint64_t id, const char* topic);
 void mqtt_subscribe_topic(const char* topic);
 
 int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout);

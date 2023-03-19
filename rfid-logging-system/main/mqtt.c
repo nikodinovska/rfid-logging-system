@@ -65,16 +65,6 @@ void mqtt_publish_msg(const char* msg, const char* topic)
   mqtt_status = Working;
 }
 
-void mqtt_publish_json_msg(cJSON *root, uint64_t timestamp, uint64_t id, const char* topic)
-{
-  create_json(root, timestamp, id);
-  char *json_str = cJSON_Print(root);
-  int msg_id = esp_mqtt_client_publish(mqtt_client, topic, json_str, strlen(json_str), 1, 0);
-  ESP_LOGI(LOG_TAG, "MQTT sent publish JSON, msg_id=%d", msg_id);
-  mqtt_status = Working;
-  free(json_str);
-}
-
 void mqtt_subscribe_topic(const char* topic)
 {
   int msg_id = esp_mqtt_client_subscribe(mqtt_client, topic, 0);

@@ -99,13 +99,19 @@ static void app_main_loop()
 			vTaskDelay(MQTT_WAIT_TICKS);
 		}
 		cJSON_Delete(root);
+
 		mqtt_data_t response_mqtt;
 		// wait for MQTT response
 		int response_received = mqtt_get_data_status(&response_mqtt, -5);
 		printf("response_received: %d", response_received);
 
+		// MQTT Parsing
+		cJSON *mqtt_response_json = cJSON_Parse(response_mqtt.data);
+		cJSON *status = cJSON_GetObjectItemCaseSensitive(mqtt_response_json, "status");
+		cJSON *name = cJSON_GetObjectItemCaseSensitive(mqtt_response_json, "name");
 		// print something on LCD
-		//lcd_print(response_mqtt.data, 0);
-		lcd_print("HELLO", 0);
+		lcd_print(status->valuestring, 0);
+		//lcd_print("HELLO", 0);
+		cJSON_Delete(mqtt_response_json);
 	}
 }

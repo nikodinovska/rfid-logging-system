@@ -1,8 +1,6 @@
 #ifndef _RFID_LOG_SYS_MQTT_H
 #define _RFID_LOG_SYS_MQTT_H
 
-#include <cJSON.h>
-
 #define MQTT_MAX_BUF_LEN 100
 #define SUCESSFUL 0
 #define UNSUCESSFUL -1

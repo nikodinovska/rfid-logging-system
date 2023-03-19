@@ -3,6 +3,7 @@
 #include <freertos/FreeRTOS.h>
 #include <freertos/timers.h>
 #include <freertos/semphr.h>
+#include <freertos/task.h>
 
 #include <esp_log.h>
 #include <hd44780.h>
@@ -40,6 +41,11 @@ void lcd_init(void)
   lcd_sem = xSemaphoreCreateBinary();
 
   ESP_LOGI(LOG_TAG, "LCD init successfull");
+}
+
+void lcd_start(void)
+{
+  xTaskCreate(lcd_task, "lcd_task", configMINIMAL_STACK_SIZE * 3, NULL, 3, NULL);  
 }
 
 void lcd_print(const char* msg, uint8_t pos)

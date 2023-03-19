@@ -4,6 +4,7 @@
 #include <stdint.h>
 
 void lcd_init(void);
+void lcd_start(void);
 void lcd_print(const char* msg, uint8_t pos);
 void lcd_task(void *arg);
 

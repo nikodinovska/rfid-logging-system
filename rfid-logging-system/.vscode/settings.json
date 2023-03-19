@@ -22,7 +22,9 @@
     "nvs_flash.h": "c",
     "lcd.h": "c",
     "semphr.h": "c",
-    "time.h": "c"
+    "time.h": "c",
+    "condition_variable": "c",
+    "future": "c"
   },
   "idf.flashType": "UART",
   "idf.port": "/dev/ttyUSB0"

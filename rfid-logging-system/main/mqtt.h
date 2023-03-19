@@ -1,13 +1,36 @@
 #ifndef _RFID_LOG_SYS_MQTT_H
 #define _RFID_LOG_SYS_MQTT_H
 
+#include <cJSON.h>
+
+#define MQTT_MAX_BUF_LEN 100
+#define SUCESSFUL 0
+#define UNSUCESSFUL -1
+
+typedef struct {
+  char data[MQTT_MAX_BUF_LEN];
+  char topic[MQTT_MAX_BUF_LEN];
+} mqtt_data_t;
+
+typedef enum
+{
+  Disconnected,
+  Connected,
+  Working,
+  Error
+} mqtt_status_t;
+
 void wifi_init(void);
 void wifi_connect(void);
 
 void mqtt_start(void);
+mqtt_status_t mqtt_get_connection_status(void);
+
 void mqtt_publish_msg(const char* msg, const char* topic);
+void mqtt_publish_json_msg(cJSON *root, uint64_t timestamp, uint64_t id, const char* topic);
 void mqtt_subscribe_topic(const char* topic);
-const char* mqtt_get_msg();
+
+int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout);
 
 void mqtt_task(void* params);
 

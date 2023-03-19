@@ -1,37 +1,29 @@
+#include <freertos/FreeRTOS.h>
+#include <freertos/semphr.h>
+
 #include <nvs_flash.h>
 #include <esp_netif.h>
 #include <protocol_examples_common.h>
 #include <esp_log.h>
 #include <esp_wifi.h>
 #include <esp_system.h>
-
 #include <esp_event.h>
 #include <esp_netif.h>
-
 #include <lwip/sockets.h>
 #include <lwip/dns.h>
 #include <lwip/netdb.h>
 #include <mqtt_client.h>
 
+#include "config.h"
+#include "json.h"
 #include "mqtt.h"
-#include "lcd.h"
 
 static const char *LOG_TAG = "MQTT";
-static const char *APP_TAG = "APP"; //< @todo move to other source
-
-enum mqtt_status
-{
-  Idle,
-  Done,
-  Error
-};
 
 static esp_mqtt_client_handle_t mqtt_client;
-static enum mqtt_status mqtt_stat;
-#define MQTT_MAX_BUF_LEN 100
-static bool mqtt_new_data_received;
-static char mqtt_new_data[MQTT_MAX_BUF_LEN];
-static char mqtt_new_data_topic[MQTT_MAX_BUF_LEN];
+static mqtt_status_t mqtt_status = Disconnected;
+static mqtt_data_t mqtt_data;
+SemaphoreHandle_t mqtt_sem;
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data);
 static void log_error_if_nonzero(const char *message, int error_code);
@@ -52,83 +44,61 @@ void mqtt_start(void)
 {
   ///@todo remove mqtt broker URI from code, put in config file
   esp_mqtt_client_config_t mqtt_cfg = {
-      .broker.address.uri = "mqtt://192.168.2.100",
+      .broker.address.uri = MQTT_BROKER_URI,
   };
   mqtt_client = esp_mqtt_client_init(&mqtt_cfg);
-  /* The last argument may be used to pass data to the event handler, in this example mqtt_event_handler */
   esp_mqtt_client_register_event(mqtt_client, ESP_EVENT_ANY_ID, mqtt_event_handler, NULL);
+  mqtt_status = Disconnected;
+  mqtt_sem = xSemaphoreCreateBinary();
   esp_mqtt_client_start(mqtt_client);
+}
+
+mqtt_status_t mqtt_get_connection_status(void)
+{
+  return mqtt_status;
 }
 
 void mqtt_publish_msg(const char* msg, const char* topic)
 {
-  msg_id = esp_mqtt_client_publish(mqtt_client, topic, msg, 0, 1, 0);
+  int msg_id = esp_mqtt_client_publish(mqtt_client, topic, msg, 0, 1, 0);
   ESP_LOGI(LOG_TAG, "MQTT sent publish, msg_id=%d", msg_id);
+  mqtt_status = Working;
+}
+
+void mqtt_publish_json_msg(cJSON *root, uint64_t timestamp, uint64_t id, const char* topic)
+{
+  create_json(root, timestamp, id);
+  char *json_str = cJSON_Print(root);
+  int msg_id = esp_mqtt_client_publish(mqtt_client, topic, json_str, strlen(json_str), 1, 0);
+  ESP_LOGI(LOG_TAG, "MQTT sent publish JSON, msg_id=%d", msg_id);
+  mqtt_status = Working;
+  free(json_str);
 }
 
 void mqtt_subscribe_topic(const char* topic)
 {
   int msg_id = esp_mqtt_client_subscribe(mqtt_client, topic, 0);
-  ESP_LOGI(APP_TAG, "MQTT sent subscribe, msg_id=%d", msg_id);
+  ESP_LOGI(LOG_TAG, "MQTT sent subscribe, msg_id=%d", msg_id);
+  mqtt_status = Working;
 }
-
-void mqtt_task(void* params)
+/*
+const mqtt_data_t* mqtt_get_data(int timeout)
 {
-  const int wait_ms = 5;
-  const TickType_t wait_ticks = pdMS_TO_TICKS(wait_ms);
-  // wait for mqtt connection
-  ESP_LOGI(APP_TAG, "Wait for MQTT connect");
-  while(mqtt_stat == Idle)
+  xSemaphoreTake(mqtt_sem, timeout);
+
+  return &mqtt_data;
+}
+*/
+int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout)
+{
+  timeout = ((timeout < 0) ? portMAX_DELAY : timeout);
+  if (xSemaphoreTake(mqtt_sem, timeout) == pdFALSE)
   {
-    vTaskDelay(wait_ticks);
+    return UNSUCESSFUL;
   }
-  if(mqtt_stat == Error)
-  {
-    ESP_LOGE(APP_TAG, "MQTT error occured");
-    vTaskDelete(NULL);
-  }
-  mqtt_stat = Idle;
-  // subscribe to topic
-  int msg_id = esp_mqtt_client_subscribe(mqtt_client, "/topic/qos0", 0);
-  ESP_LOGI(APP_TAG, "MQTT sent subscribe, msg_id=%d", msg_id);
-  // wait for subscription
-  while(mqtt_stat == Idle)
-  {
-    vTaskDelay(wait_ticks);
-  }
-  if(mqtt_stat == Error)
-  {
-    ESP_LOGE(APP_TAG, "MQTT error occured");
-    vTaskDelete(NULL);
-  }
-  mqtt_stat = Idle;
-  // publish to topic
-  msg_id = esp_mqtt_client_publish(mqtt_client, "/topic/qos1", "bump", 0, 1, 0);
-  ESP_LOGI(APP_TAG, "sent publish, msg_id=%d", msg_id);
-  // wait for publish to finish
-  while(mqtt_stat == Idle)
-  {
-    vTaskDelay(wait_ticks);
-  }
-  if(mqtt_stat == Error)
-  {
-    ESP_LOGE(APP_TAG, "MQTT error occured");
-    vTaskDelete(NULL);
-  }
-  while(true)
-  {
-    if(mqtt_new_data_received)
-    {
-      mqtt_new_data_received = false;
-      ESP_LOGI(APP_TAG, "Received MQTT data topic: %s", mqtt_new_data_topic);
-      ESP_LOGI(APP_TAG, "Received MQTT data: %s", mqtt_new_data);
-      lcd_print(mqtt_new_data, 0);
-    }
-    else
-    {
-      vTaskDelay(wait_ticks);
-    }
-  }
+  strcpy(mqtt_data_ptr->topic, mqtt_data.topic);
+  strcpy(mqtt_data_ptr->data, mqtt_data.data);
+  return SUCESSFUL;
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)
@@ -139,31 +109,34 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
   {
   case MQTT_EVENT_CONNECTED:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_CONNECTED");
-    mqtt_stat = Done;
+    mqtt_status = Connected;
     break;
   case MQTT_EVENT_DISCONNECTED:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_DISCONNECTED");
+    mqtt_status = Disconnected;
     break;
   case MQTT_EVENT_SUBSCRIBED:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_SUBSCRIBED, msg_id=%d", event->msg_id);
-    mqtt_stat = Done;
+    mqtt_status = Connected;
     break;
   case MQTT_EVENT_UNSUBSCRIBED:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_UNSUBSCRIBED, msg_id=%d", event->msg_id);
+    mqtt_status = Connected;
     break;
   case MQTT_EVENT_PUBLISHED:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_PUBLISHED, msg_id=%d", event->msg_id);
-    mqtt_stat = Done;
+    mqtt_status = Connected;
     break;
   case MQTT_EVENT_DATA:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_DATA");
     ESP_LOGI(LOG_TAG, "MQTT topic: %s", event->topic);
     ESP_LOGI(LOG_TAG, "MQTT data: %s", event->data);
-    strncpy(mqtt_new_data_topic, event->topic, event->topic_len);
-    mqtt_new_data_topic[event->topic_len] = '\0';
-    strncpy(mqtt_new_data, event->data, event->data_len);
-    mqtt_new_data[event->data_len] = '\0';
-    mqtt_new_data_received = true;
+    strncpy(mqtt_data.topic, event->topic, event->topic_len);
+    mqtt_data.topic[event->topic_len] = '\0';
+    strncpy(mqtt_data.data, event->data, event->data_len);
+    mqtt_data.data[event->data_len] = '\0';
+    mqtt_status = Connected;
+    xSemaphoreGive(mqtt_sem);
     break;
   case MQTT_EVENT_ERROR:
     ESP_LOGI(LOG_TAG, "MQTT_EVENT_ERROR");
@@ -174,7 +147,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
       log_error_if_nonzero("captured as transport's socket errno", event->error_handle->esp_transport_sock_errno);
       ESP_LOGI(LOG_TAG, "Last errno string (%s)", strerror(event->error_handle->esp_transport_sock_errno));
     }
-    mqtt_stat = Error;
+    mqtt_status = Error;
     break;
   default:
     ESP_LOGI(LOG_TAG, "Other event id:%d", event->event_id);

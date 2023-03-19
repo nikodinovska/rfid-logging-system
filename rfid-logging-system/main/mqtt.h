@@ -2,8 +2,6 @@
 #define _RFID_LOG_SYS_MQTT_H
 
 #define MQTT_MAX_BUF_LEN 100
-#define SUCESSFUL 0
-#define UNSUCESSFUL -1
 
 typedef struct {
   char data[MQTT_MAX_BUF_LEN];
@@ -27,7 +25,7 @@ mqtt_status_t mqtt_get_connection_status(void);
 void mqtt_publish_msg(const char* msg, const char* topic);
 void mqtt_subscribe_topic(const char* topic);
 
-int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout);
+int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout_ms);
 
 void mqtt_task(void* params);
 

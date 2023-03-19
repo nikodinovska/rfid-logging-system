@@ -17,6 +17,7 @@
 #include "config.h"
 #include "json.h"
 #include "mqtt.h"
+#include "utils.h"
 
 static const char *LOG_TAG = "MQTT";
 
@@ -79,16 +80,17 @@ const mqtt_data_t* mqtt_get_data(int timeout)
   return &mqtt_data;
 }
 */
-int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout)
+int mqtt_get_data_status(mqtt_data_t* mqtt_data_ptr, int timeout_ms)
 {
-  timeout = ((timeout < 0) ? portMAX_DELAY : timeout);
-  if (xSemaphoreTake(mqtt_sem, timeout) == pdFALSE)
+  timeout_ms = ((timeout_ms < 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms));
+  if (xSemaphoreTake(mqtt_sem, timeout_ms) == pdFALSE)
   {
-    return UNSUCESSFUL;
+    ESP_LOGI(LOG_TAG, "Semaphore not taken...");
+    return UNSUCCESSFUL;
   }
   strcpy(mqtt_data_ptr->topic, mqtt_data.topic);
   strcpy(mqtt_data_ptr->data, mqtt_data.data);
-  return SUCESSFUL;
+  return SUCCESSFUL;
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data)

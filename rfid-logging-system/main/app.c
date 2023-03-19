@@ -15,6 +15,10 @@
 #define MQTT_WAIT_MS 5
 #define MQTT_WAIT_TICKS pdMS_TO_TICKS(MQTT_WAIT_MS)
 
+#define MQTT_SEM_TAKE_MS 5000
+
+#define RFID_SEM_TAKE_MS 500
+
 #define JSON_BUF_SIZE 1024
 
 static const char* LOG_TAG = "APP";
@@ -77,7 +81,12 @@ static void app_main_loop()
 	while(1)
 	{
 		// wait for RFID tag
-		rc522_tag_t tag = rfid_get_tag();
+		rc522_tag_t tag;
+		int status_rfid = rfid_get_tag(&tag, RFID_SEM_TAKE_MS);
+		if(status_rfid == UNSUCCESSFUL)
+		{
+			continue;
+		}
 
 		// send tag info via MQTT
 		/*
@@ -102,16 +111,20 @@ static void app_main_loop()
 
 		mqtt_data_t response_mqtt;
 		// wait for MQTT response
-		int response_received = mqtt_get_data_status(&response_mqtt, -5);
-		printf("response_received: %d", response_received);
-
+		int response_received = mqtt_get_data_status(&response_mqtt, MQTT_SEM_TAKE_MS);
+	
+		if(response_received == UNSUCCESSFUL)
+		{
+			continue;
+		}
+		
 		// MQTT Parsing
 		cJSON *mqtt_response_json = cJSON_Parse(response_mqtt.data);
 		cJSON *status = cJSON_GetObjectItemCaseSensitive(mqtt_response_json, "status");
 		cJSON *name = cJSON_GetObjectItemCaseSensitive(mqtt_response_json, "name");
 		// print something on LCD
 		lcd_print(status->valuestring, 0);
-		//lcd_print("HELLO", 0);
+		// lcd_print("HELLO", 0);
 		cJSON_Delete(mqtt_response_json);
 	}
 }

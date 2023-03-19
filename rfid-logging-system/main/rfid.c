@@ -6,6 +6,7 @@
 #include <esp_log.h>
 
 #include "rfid.h"
+#include "utils.h"
 
 static const char *LOG_TAG = "RFID";
 static rc522_handle_t rfid_scanner;
@@ -34,10 +35,16 @@ void rfid_start(void)
   rc522_start(rfid_scanner);
 }
 
-rc522_tag_t rfid_get_tag(void)
+int rfid_get_tag(rc522_tag_t* rfid_tag, int timeout_ms)
 {
-  xSemaphoreTake(rfid_sem, portMAX_DELAY);
-  return rfid_last_tag;
+  timeout_ms = ((timeout_ms < 0) ? portMAX_DELAY : pdMS_TO_TICKS(timeout_ms));
+  if (xSemaphoreTake(rfid_sem, timeout_ms) == pdFALSE)
+  {
+    ESP_LOGI(LOG_TAG, "Semaphore not taken...");
+    return UNSUCCESSFUL;
+  }
+  memcpy(rfid_tag, &rfid_last_tag, sizeof(rc522_tag_t));
+  return SUCCESSFUL;
 }
 
 static void rc522_handler(void *arg, esp_event_base_t base, int32_t event_id, void *event_data)
